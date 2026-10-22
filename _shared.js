@@ -25,12 +25,14 @@ const NAMES = {
   'stekstation-frame-hout': 'Wooden frame propagation station',
 };
 
-// Shipping from Belgium, parcel up to 2 kg, prices incl. VAT. Adjust to your real tariffs.
+// Shipping from Belgium, parcel up to 2 kg, prices incl. 21% VAT. Adjust to your real tariffs.
+//  Belgium: bpost (online label)       Netherlands: PostNL (small-sender tariff 2026, excl. energy surcharge)
+//  France: Mondial Relay               Germany: DPD
 const SHIPPING = {
-  Belgium:     { home: { carrier: 'PostNL',        price: 6.97 },  pickup: { carrier: 'Mondial Relay', price: 4.40 } },
-  Netherlands: { home: { carrier: 'Mondial Relay', price: 7.00 },  pickup: { carrier: 'Mondial Relay', price: 5.10 } },
+  Belgium:     { home: { carrier: 'bpost',         price: 7.10 },  pickup: { carrier: 'bpost',         price: 5.40 } },
+  Netherlands: { home: { carrier: 'PostNL',        price: 10.59 }, pickup: { carrier: 'PostNL',        price: 10.29 } },
   France:      { home: { carrier: 'Mondial Relay', price: 15.00 }, pickup: { carrier: 'Mondial Relay', price: 6.50 } },
-  Germany:     { home: { carrier: 'PostNL',        price: 10.69 }, pickup: { carrier: 'DPD Pickup',    price: 9.22 } },
+  Germany:     { home: { carrier: 'DPD',           price: 11.09 }, pickup: { carrier: 'DPD Pickup',    price: 9.22 } },
 };
 
 // Used when stock.json cannot be read

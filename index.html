@@ -634,10 +634,10 @@
     const ORDER_EMAIL = 'Ruben.verla@gmail.com';
     const COUNTRIES = ['Belgium', 'Netherlands', 'France', 'Germany'];
     const SHIP = {
-      Belgium:     { home: { carrier: 'PostNL',        price: 6.97 },  pickup: { carrier: 'Mondial Relay', price: 4.40, url: 'https://www.mondialrelay.be/nl-be/het-afhaalpunt-vinden-vlak-bij/' } },
-      Netherlands: { home: { carrier: 'Mondial Relay', price: 7.00 },  pickup: { carrier: 'Mondial Relay', price: 5.10, url: 'https://www.mondialrelay.nl/' } },
-      France:      { home: { carrier: 'Mondial Relay', price: 15.00 }, pickup: { carrier: 'Mondial Relay', price: 6.50, url: 'https://www.mondialrelay.fr/' } },
-      Germany:     { home: { carrier: 'PostNL',        price: 10.69 }, pickup: { carrier: 'DPD Pickup',    price: 9.22,  url: 'https://www.dpdgroup.com/be/mydpd/parcel-shops/search?lang=en&address=Germany' } }
+      Belgium:     { home: { carrier: 'bpost',         price: 7.10 },  pickup: { carrier: 'bpost',         price: 5.40,  url: 'https://www.bpost.be/nl/verkooppunten' } },
+      Netherlands: { home: { carrier: 'PostNL',        price: 10.59 }, pickup: { carrier: 'PostNL',        price: 10.29, url: 'https://www.postnl.nl/locatiewijzer/' } },
+      France:      { home: { carrier: 'Mondial Relay', price: 15.00 }, pickup: { carrier: 'Mondial Relay', price: 6.50,  url: 'https://www.mondialrelay.fr/' } },
+      Germany:     { home: { carrier: 'DPD',           price: 11.09 }, pickup: { carrier: 'DPD Pickup',    price: 9.22,  url: 'https://www.dpdgroup.com/be/mydpd/parcel-shops/search?lang=en&address=Germany' } }
     };
     const plain = n => '€' + n.toFixed(2);
     let cart = [];
@@ -867,6 +867,7 @@
       try {
         const r = await fetch('/api/create-payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         let data = null; try { data = await r.json(); } catch (e) {}
+        if (r.status === 404) console.error('Rooted: /api/create-payment not found. The api folder is not deployed on this site; open /api/health to check.');
         if (!r.ok || !data || !data.paymentId) throw new Error((data && data.error) || (r.status === 404 ? 'Online payment is not available on this version of the site.' : 'Something went wrong. Please try again.'));
         pending = { paymentId: data.paymentId, orderId: data.orderId, total: data.total, qr: data.qr, checkoutUrl: data.checkoutUrl,
           order: { id: data.orderId, lines, subtotal: data.subtotal, shipping: data.shipping, total: data.total,

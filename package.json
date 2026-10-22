@@ -1,5 +1,5 @@
 {
   "name": "rooted",
   "private": true,
-  "engines": { "node": ">=18" }
+  "engines": { "node": "20.x" }
 }
