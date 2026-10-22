@@ -627,34 +627,29 @@
     window.addEventListener('hashchange', () => { if (location.hash === '#admin') askAdmin(); });
 
     /* ---------- Cart & checkout ---------- */
-    /* SETTINGS — fill these in when you have them:
-       ORDER_ENDPOINT: a Formspree / Web3Forms URL. When set, orders are posted there and arrive in your inbox automatically.
-                       When empty, the order opens as a pre-filled email instead.
-       BANK_IBAN / BANK_NAME: shown to customers who choose bank transfer. */
+    /* SETTINGS
+       Payment runs through the serverless functions in /api (Mollie). The Mollie key is NOT in this file:
+       it is stored as the MOLLIE_API_KEY environment variable on the host (Vercel).
+       SHIP: shipping from Belgium, parcel up to 2 kg, incl. VAT. Keep it in sync with api/_shared.js (the server uses that one). */
     const ORDER_EMAIL = 'Ruben.verla@gmail.com';
-    const ORDER_ENDPOINT = '';
-    /* Shipping cost per destination country (in euro). Adjust to your real rates.
-       FREE_SHIPPING_FROM: order subtotal from which shipping is free (0 = never free). */
-    const SHIPPING = { Belgium: 4.95, Netherlands: 6.95, Luxembourg: 6.95, Germany: 8.95, France: 8.95 };
-    const FREE_SHIPPING_FROM = 0;
-    /* Admin code for the sold-out panel (open the site with #admin at the end of the address). Change it! */
-    const ADMIN_CODE = 'rooted-admin';
-    const BANK_IBAN = '';
-    const BANK_NAME = 'Rooted';
-    const COUNTRIES = ['Belgium', 'Netherlands', 'Luxembourg', 'Germany', 'France'];
-    const PAYMENTS = [
-      { id: 'transfer', title: 'Bank transfer', sub: 'Pay by transfer with your order number as reference', icon: '<rect x="3" y="10" width="18" height="10" rx="1"/><path d="M12 3 2 9h20L12 3zM6 10v10M10 10v10M14 10v10M18 10v10"/>' },
-      { id: 'link', title: 'Bancontact, Payconiq or card', sub: 'We email you a secure payment link', icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>' }
-    ];
+    const COUNTRIES = ['Belgium', 'Netherlands', 'France', 'Germany'];
+    const SHIP = {
+      Belgium:     { home: { carrier: 'PostNL',        price: 6.97 },  pickup: { carrier: 'Mondial Relay', price: 4.40, url: 'https://www.mondialrelay.be/nl-be/het-afhaalpunt-vinden-vlak-bij/' } },
+      Netherlands: { home: { carrier: 'Mondial Relay', price: 7.00 },  pickup: { carrier: 'Mondial Relay', price: 5.10, url: 'https://www.mondialrelay.nl/' } },
+      France:      { home: { carrier: 'Mondial Relay', price: 15.00 }, pickup: { carrier: 'Mondial Relay', price: 6.50, url: 'https://www.mondialrelay.fr/' } },
+      Germany:     { home: { carrier: 'PostNL',        price: 10.69 }, pickup: { carrier: 'DPD Pickup',    price: 9.22,  url: 'https://www.dpdgroup.com/be/mydpd/parcel-shops/search?lang=en&address=Germany' } }
+    };
     const plain = n => '€' + n.toFixed(2);
     let cart = [];
     try { cart = (JSON.parse(localStorage.getItem('rooted_cart')) || []).filter(l => products.some(p => p.id === l.id) && l.qty > 0); } catch (e) {}
     const saveCart = () => { try { localStorage.setItem('rooted_cart', JSON.stringify(cart)); } catch (e) {} };
     const cartQty = () => cart.reduce((s, l) => s + l.qty, 0);
     const cartCents = () => cart.reduce((s, l) => s + Math.round(products.find(p => p.id === l.id).price * 100) * l.qty, 0);
-    const shipCents = () => { const sub = cartCents(); if (FREE_SHIPPING_FROM > 0 && sub >= FREE_SHIPPING_FROM * 100) return 0; return Math.round((SHIPPING[form.country] ?? 0) * 100); };
-    const shipLabel = () => shipCents() === 0 ? 'Free' : plain(shipCents() / 100);
-    let view = 'cart', form = { country: 'Belgium', payment: 'transfer' }, lastOrder = null;
+    let view = 'cart', form = { country: 'Belgium', delivery: 'home' }, lastOrder = null, pending = null, pollTimer = null, payMsg = '';
+    try { pending = JSON.parse(localStorage.getItem('rooted_pending')); } catch (e) {}
+    const savePending = () => { try { pending ? localStorage.setItem('rooted_pending', JSON.stringify(pending)) : localStorage.removeItem('rooted_pending'); } catch (e) {} };
+    const shipOpt = () => (SHIP[form.country] || SHIP.Belgium)[form.delivery === 'pickup' ? 'pickup' : 'home'];
+    const shipCents = () => Math.round(shipOpt().price * 100);
 
     let toastTimer;
     function toast(msg) {
@@ -679,8 +674,20 @@
     const svgIc = d => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
     const IC_PLUS = svgIc('<path d="M12 5v14M5 12h14"/>'), IC_MINUS = svgIc('<path d="M5 12h14"/>'),
           IC_TRASH = svgIc('<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'),
-          IC_BACK = svgIc('<path d="M19 12H5M12 19l-7-7 7-7"/>');
+          IC_BACK = svgIc('<path d="M19 12H5M12 19l-7-7 7-7"/>'),
+          IC_HOME = svgIc('<path d="M3 11 12 3l9 8M5 10v10h14V10M10 20v-6h4v6"/>'),
+          IC_PIN = svgIc('<path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>'),
+          IC_QR = svgIc('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h3M21 17v4"/>');
     const fld = (name, label, extra = '') => `<label class="block text-sm font-semibold">${label}<input class="field mt-1" name="${name}" value="${esc(form[name] || '')}" ${extra}></label>`;
+    const safeUrl = u => /^(https:\/\/|data:image\/)/.test(u || '') ? u : '';
+
+    function summaryHtml(lines, subtotal, shipping, total, shipText) {
+      return `<div class="bg-white/60 rounded-2xl p-4 text-sm space-y-1">${lines.map(l => `<div class="flex justify-between gap-3"><span>${l.qty} × ${esc(l.name)}</span><span>${plain(l.price * l.qty)}</span></div>`).join('')}
+        <div class="flex justify-between border-t border-[var(--ink)]/10 pt-2 mt-2"><span>Subtotal</span><span>${plain(subtotal)}</span></div>
+        <div class="flex justify-between gap-3"><span>${shipText}</span><span>${plain(shipping)}</span></div>
+        <div class="flex justify-between font-bold text-base border-t border-[var(--ink)]/10 pt-2 mt-2"><span>Total</span><span>${plain(total)}</span></div></div>`;
+    }
+    const cartLines = () => cart.map(l => { const p = products.find(x => x.id === l.id); return { id: p.id, name: p.name, qty: l.qty, price: p.price }; });
 
     function renderCart() {
       const n = cartQty();
@@ -689,39 +696,54 @@
       const grand = view === 'checkout';
       $('#cart-total').innerHTML = euro((cartCents() + (grand ? shipCents() : 0)) / 100);
       $('#cart-total-label').textContent = grand ? 'Total' : 'Subtotal';
-      $('#cart-note').textContent = grand ? 'Incl. shipping to ' + form.country + '. Prices include VAT where applicable.' : 'Shipping is calculated at checkout.';
+      $('#cart-note').textContent = grand ? 'Incl. shipping to ' + form.country + '. You pay by scanning a QR code in the next step.' : 'Shipping is calculated at checkout.';
       $('#cart-aside').classList.toggle('wide', view !== 'cart');
 
-      if (view === 'done') {
+      /* ----- payment (QR) ----- */
+      if (view === 'pay' && pending) {
+        foot.classList.add('hidden'); $('#cart-title').textContent = 'Pay with Bancontact';
+        const qr = safeUrl(pending.qr), link = safeUrl(pending.checkoutUrl);
+        body.innerHTML = `<div class="py-2 text-center">
+          <p class="text-[var(--ink)]/70">Order <b>${pending.orderId}</b></p>
+          <p class="font-serif font-bold text-5xl mt-1">${euro(pending.total)}</p>
+          ${qr ? `<img src="${qr}" alt="QR code to pay your order" class="w-60 h-60 mx-auto mt-5 rounded-3xl bg-white p-3 shadow">` : `<div class="w-60 h-60 mx-auto mt-5 rounded-3xl bg-white grid place-items-center p-6 text-sm">No QR code available. Use the button below to pay.</div>`}
+          <ol class="text-left text-sm mt-6 space-y-2 max-w-xs mx-auto list-decimal pl-5">
+            <li>Open your <b>Bancontact</b> or banking app</li><li>Scan this QR code</li><li>Confirm the payment. This page updates by itself.</li></ol>
+          ${link ? `<a href="${link}" target="_blank" rel="noopener" class="btn-add mt-6 inline-flex items-center justify-center gap-2 bg-[var(--ink)] text-[var(--cream)] rounded-full px-7 py-3.5 font-bold"><span>Pay on this device instead</span></a>` : ''}
+          <p id="pay-status" class="mt-5 text-sm font-semibold ${payMsg ? 'text-[var(--terra)]' : 'text-[var(--ink)]/60'}">${payMsg || 'Waiting for your payment…'}</p>
+          <button id="pay-cancel" type="button" class="mt-2 text-sm underline text-[var(--ink)]/60 hover:text-[var(--terra)]">${payMsg ? 'Back to checkout' : 'Cancel and go back'}</button></div>`;
+        $('#pay-cancel').onclick = () => { stopPolling(); pending = null; savePending(); payMsg = ''; view = 'checkout'; renderCart(); };
+        return;
+      }
+
+      /* ----- confirmation ----- */
+      if (view === 'done' && lastOrder) {
         const o = lastOrder;
-        foot.classList.add('hidden'); $('#cart-title').textContent = 'Order placed';
-        const pay = o.payment === 'transfer'
-          ? `<p class="font-bold">Pay by bank transfer</p>
-             <p class="text-sm mt-1">${BANK_IBAN ? `Transfer <b>${plain(o.total)}</b> to <b>${esc(BANK_IBAN)}</b> (${esc(BANK_NAME)}) and use <b>${o.id}</b> as the reference.` : `We will email you our bank details. Use <b>${o.id}</b> as the reference when you transfer <b>${plain(o.total)}</b>.`}</p>`
-          : `<p class="font-bold">Payment link</p><p class="text-sm mt-1">We will email a secure Bancontact, Payconiq or card payment link for <b>${plain(o.total)}</b> to ${esc(o.customer.email)}.</p>`;
+        foot.classList.add('hidden'); $('#cart-title').textContent = 'Payment received';
+        const where = o.delivery.method === 'pickup'
+          ? `<p class="font-bold">Pickup point (${esc(o.delivery.carrier)})</p><p class="text-sm mt-1">${esc(o.delivery.pickupPoint)}</p>`
+          : `<p class="font-bold">Home delivery (${esc(o.delivery.carrier)})</p><p class="text-sm mt-1">${esc(o.customer.first)} ${esc(o.customer.last)}<br>${esc(o.address.street)} ${esc(o.address.number)}<br>${esc(o.address.postal)} ${esc(o.address.city)}<br>${esc(o.address.country)}</p>`;
         body.innerHTML = `<div class="py-6">
           <div class="w-16 h-16 rounded-full bg-[var(--sage)] grid place-items-center mx-auto text-2xl">${svgIc('<path d="M20 6 9 17l-5-5"/>')}</div>
           <p class="font-serif font-bold text-3xl text-center mt-5">Thank you, ${esc(o.customer.first)}!</p>
-          <p class="text-center mt-1 text-[var(--ink)]/70">Order <b>${o.id}</b></p>
-          <div class="mt-7 bg-white/60 rounded-2xl p-5 space-y-4">
-            <div>${o.lines.map(l => `<div class="flex justify-between text-sm py-0.5"><span>${l.qty} × ${esc(l.name)}</span><span>${plain(l.price * l.qty)}</span></div>`).join('')}
-              <div class="flex justify-between text-sm border-t border-[var(--ink)]/10 mt-2 pt-2"><span>Subtotal</span><span>${plain(o.subtotal)}</span></div>
-              <div class="flex justify-between text-sm"><span>Shipping</span><span>${o.shipping === 0 ? 'Free' : plain(o.shipping)}</span></div>
-              <div class="flex justify-between font-bold mt-1"><span>Total</span><span>${plain(o.total)}</span></div></div>
-            <div class="border-t border-[var(--ink)]/10 pt-4"><p class="font-bold">Delivery address</p>
-              <p class="text-sm mt-1">${esc(o.customer.first)} ${esc(o.customer.last)}<br>${esc(o.address.street)} ${esc(o.address.number)}<br>${esc(o.address.postal)} ${esc(o.address.city)}<br>${esc(o.address.country)}</p></div>
-            <div class="border-t border-[var(--ink)]/10 pt-4">${pay}</div>
-          </div>
-          <p class="text-sm text-center mt-5 text-[var(--ink)]/70">${o.sent ? `A copy of your order was sent to us. We will contact you at ${esc(o.customer.email)}.` : `Your email app should have opened with your order. <b>Press send</b> to complete it, or email us at <a class="underline" href="mailto:${ORDER_EMAIL}">${ORDER_EMAIL}</a>.`}</p>
+          <p class="text-center mt-1 text-[var(--ink)]/70">Order <b>${esc(o.id)}</b> is paid</p>
+          <div class="mt-7 space-y-4">${summaryHtml(o.lines, o.subtotal, o.shipping, o.total, 'Shipping')}
+            <div class="bg-white/60 rounded-2xl p-5">${where}</div></div>
+          <p class="text-sm text-center mt-5 text-[var(--ink)]/70">We are preparing your order. Questions? Email <a class="underline" href="mailto:${ORDER_EMAIL}">${ORDER_EMAIL}</a>.</p>
           <div class="text-center"><button onclick="closeCart()" class="btn-add mt-6 bg-[var(--ink)] text-[var(--cream)] rounded-full px-8 py-3.5 font-bold"><span>Keep browsing</span></button></div></div>`;
         return;
       }
       foot.classList.toggle('hidden', n === 0);
 
+      /* ----- checkout form ----- */
       if (view === 'checkout') {
         $('#cart-title').textContent = 'Checkout';
-        $('#cart-checkout').querySelector('span').textContent = 'Place order';
-        const sel = (name, opts) => `<select name="${name}" class="field mt-1">${opts.map(o => `<option ${form[name] === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+        $('#cart-checkout').querySelector('span').textContent = 'Continue to payment';
+        const z = SHIP[form.country] || SHIP.Belgium;
+        const delivery = (id, icon, title, o) => `<label class="flex items-start gap-3 bg-white/60 border-2 rounded-2xl p-4 cursor-pointer transition ${form.delivery === id ? 'border-[var(--terra)]' : 'border-transparent hover:border-[var(--ink)]/15'}">
+            <input type="radio" name="delivery" value="${id}" class="mt-1 accent-[var(--terra)]" ${form.delivery === id ? 'checked' : ''}>
+            <span class="flex-1"><span class="font-bold block">${title}</span><span class="text-sm text-[var(--ink)]/65">${o.carrier}</span></span>
+            <span class="font-bold">${plain(o.price)}</span><span class="text-xl mt-0.5">${icon}</span></label>`;
         body.innerHTML = `<button id="back" type="button" class="inline-flex items-center gap-2 text-sm font-semibold mb-4 hover:text-[var(--terra)]">${IC_BACK} Back to cart</button>
           <form id="order" class="space-y-6" novalidate>
             <section class="space-y-3"><h4 class="font-serif font-bold text-xl">Contact</h4>
@@ -729,32 +751,37 @@
               ${fld('email', 'Email', 'type="email" autocomplete="email"')}
               ${fld('phone', 'Phone <span class="font-normal text-[var(--ink)]/50">(optional)</span>', 'type="tel" autocomplete="tel"')}
             </section>
-            <section class="space-y-3"><h4 class="font-serif font-bold text-xl">Delivery address</h4>
-              <label class="block text-sm font-semibold">Country${sel('country', COUNTRIES)}</label>
+            <section class="space-y-3"><h4 class="font-serif font-bold text-xl">Address</h4>
+              <label class="block text-sm font-semibold">Country<select name="country" class="field mt-1">${COUNTRIES.map(o => `<option ${form.country === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
               <div class="grid grid-cols-3 gap-3"><div class="col-span-2">${fld('street', 'Street', 'autocomplete="address-line1"')}</div>${fld('number', 'No.', 'autocomplete="address-line2"')}</div>
               <div class="grid grid-cols-3 gap-3">${fld('postal', 'Postal code', 'autocomplete="postal-code"')}<div class="col-span-2">${fld('city', 'City', 'autocomplete="address-level2"')}</div></div>
             </section>
-            <section class="space-y-3"><h4 class="font-serif font-bold text-xl">Payment method</h4>
-              ${PAYMENTS.map(m => `<label class="flex items-start gap-3 bg-white/60 border-2 rounded-2xl p-4 cursor-pointer transition ${form.payment === m.id ? 'border-[var(--terra)]' : 'border-transparent hover:border-[var(--ink)]/15'}">
-                <input type="radio" name="payment" value="${m.id}" class="mt-1 accent-[var(--terra)]" ${form.payment === m.id ? 'checked' : ''}>
-                <span class="flex-1"><span class="font-bold block">${m.title}</span><span class="text-sm text-[var(--ink)]/65">${m.sub}</span></span>
-                <span class="text-xl mt-0.5">${svgIc(m.icon)}</span></label>`).join('')}
+            <section class="space-y-3"><h4 class="font-serif font-bold text-xl">Delivery</h4>
+              ${delivery('home', IC_HOME, 'Home delivery', z.home)}
+              ${delivery('pickup', IC_PIN, 'Pickup point', z.pickup)}
+              ${form.delivery === 'pickup' ? `<div class="bg-white/60 rounded-2xl p-4 space-y-3">
+                <p class="text-sm">1. Find a pickup point near you on the <b>${z.pickup.carrier}</b> website.</p>
+                <a href="${z.pickup.url}" target="_blank" rel="noopener" class="btn-add inline-flex items-center gap-2 bg-[var(--ink)] text-[var(--cream)] rounded-full px-5 py-2.5 text-sm font-bold">${IC_PIN}<span>Find a pickup point</span></a>
+                <label class="block text-sm font-semibold">2. Type the name and address of the point you chose<textarea class="field mt-1" name="pickupPoint" rows="2" placeholder="e.g. Kiosk Jansen, Dam 1, 1012 JS Amsterdam">${esc(form.pickupPoint || '')}</textarea></label></div>` : ''}
+            </section>
+            <section class="space-y-3"><h4 class="font-serif font-bold text-xl">Payment</h4>
+              <div class="flex items-start gap-3 bg-white/60 border-2 border-[var(--terra)] rounded-2xl p-4">
+                <span class="flex-1"><span class="font-bold block">Pay by QR code (Bancontact)</span><span class="text-sm text-[var(--ink)]/65">You scan a QR code with your banking app in the next step.</span></span>
+                <span class="text-xl mt-0.5">${IC_QR}</span></div>
             </section>
             <section><h4 class="font-serif font-bold text-xl mb-2">Order note <span class="font-sans font-normal text-sm text-[var(--ink)]/50">(optional)</span></h4>
               <textarea class="field" name="note" rows="2">${esc(form.note || '')}</textarea></section>
-            <div class="bg-white/60 rounded-2xl p-4 text-sm space-y-1">${cart.map(l => { const p = products.find(x => x.id === l.id); return `<div class="flex justify-between"><span>${l.qty} × ${p.name}</span><span>${plain(p.price * l.qty)}</span></div>`; }).join('')}
-              <div class="flex justify-between border-t border-[var(--ink)]/10 pt-2 mt-2"><span>Subtotal</span><span>${plain(cartCents() / 100)}</span></div>
-              <div class="flex justify-between"><span>Shipping to ${esc(form.country)}</span><span>${shipLabel()}</span></div>
-              <div class="flex justify-between font-bold text-base border-t border-[var(--ink)]/10 pt-2 mt-2"><span>Total</span><span>${plain((cartCents() + shipCents()) / 100)}</span></div></div>
+            ${summaryHtml(cartLines(), cartCents() / 100, shipCents() / 100, (cartCents() + shipCents()) / 100, 'Shipping to ' + esc(form.country) + ' (' + z[form.delivery === 'pickup' ? 'pickup' : 'home'].carrier + ')')}
             <p id="err" class="text-sm font-semibold text-[var(--terra)] hidden"></p>
           </form>`;
         $('#back').onclick = () => { view = 'cart'; renderCart(); };
         const f = $('#order');
         f.addEventListener('input', e => { form[e.target.name] = e.target.value; });
-        f.addEventListener('change', e => { form[e.target.name] = e.target.value; if (e.target.name === 'payment' || e.target.name === 'country') renderCart(); });
+        f.addEventListener('change', e => { form[e.target.name] = e.target.value; if (e.target.name === 'delivery' || e.target.name === 'country') renderCart(); });
         return;
       }
 
+      /* ----- cart ----- */
       $('#cart-title').textContent = 'Your cart';
       $('#cart-checkout').querySelector('span').textContent = 'Checkout';
       if (!n) {
@@ -785,44 +812,72 @@
       }).join('');
     }
 
-    function openCart() { view = 'cart'; renderCart(); $('#cart').classList.add('open'); document.body.style.overflow = 'hidden'; }
-    function closeCart() { $('#cart').classList.remove('open'); document.body.style.overflow = ''; if (view === 'done') { view = 'cart'; renderCart(); } }
+    function openCart() { view = pending ? 'pay' : 'cart'; renderCart(); $('#cart').classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeCart() { $('#cart').classList.remove('open'); document.body.style.overflow = ''; if (view === 'done') { view = 'cart'; lastOrder = null; renderCart(); } }
 
     function validate(d) {
       const need = { first: 'first name', last: 'last name', street: 'street', number: 'house number', postal: 'postal code', city: 'city' };
       const miss = Object.keys(need).filter(k => !String(d[k] || '').trim()).map(k => need[k]);
       if (!/^\S+@\S+\.\S+$/.test(String(d.email || '').trim())) miss.unshift('a valid email');
+      if (d.delivery === 'pickup' && !String(d.pickupPoint || '').trim()) miss.push('your chosen pickup point');
       return miss;
+    }
+
+    /* ----- payment polling ----- */
+    function stopPolling() { clearInterval(pollTimer); pollTimer = null; }
+    function startPolling() {
+      stopPolling(); let tries = 0;
+      const tick = async () => {
+        if (!pending) return stopPolling();
+        if (++tries > 400) return stopPolling();
+        try {
+          const r = await fetch('/api/payment-status?id=' + encodeURIComponent(pending.paymentId), { cache: 'no-store' });
+          if (!r.ok) return;
+          const { status } = await r.json();
+          if (status === 'paid') return paymentDone();
+          if (['failed', 'canceled', 'expired'].includes(status)) {
+            stopPolling(); payMsg = status === 'expired' ? 'This QR code has expired.' : 'The payment was not completed.';
+            if (view === 'pay') renderCart();
+          }
+        } catch (e) { /* offline: try again */ }
+      };
+      pollTimer = setInterval(tick, 3000); tick();
+    }
+    function paymentDone() {
+      stopPolling();
+      lastOrder = pending.order; pending = null; savePending(); payMsg = '';
+      cart = []; saveCart(); form = { country: form.country, delivery: 'home' };
+      view = 'done'; renderCart(); $('#cart').classList.add('open'); document.body.style.overflow = 'hidden';
     }
 
     async function placeOrder() {
       const d = { ...form }, miss = validate(d), err = $('#err');
-      if (miss.length) { err.textContent = 'Please check: ' + miss.join(', ') + '.'; err.classList.remove('hidden'); err.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      const showErr = m => { err.textContent = m; err.classList.remove('hidden'); err.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      if (miss.length) return showErr('Please check: ' + miss.join(', ') + '.');
       err.classList.add('hidden');
-      const id = 'ROOT-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
-      const lines = cart.map(l => { const p = products.find(x => x.id === l.id); return { id: p.id, name: p.name, qty: l.qty, price: p.price }; });
-      const subtotal = cartCents() / 100, shipping = shipCents() / 100, total = subtotal + shipping;
-      const pm = PAYMENTS.find(m => m.id === d.payment).title;
-      const order = { id, lines, subtotal, shipping, total, payment: d.payment,
-        customer: { first: d.first.trim(), last: d.last.trim(), email: d.email.trim(), phone: (d.phone || '').trim() },
-        address: { street: d.street.trim(), number: d.number.trim(), postal: d.postal.trim(), city: d.city.trim(), country: d.country }, note: (d.note || '').trim(), sent: false };
-      const text = `New order ${id}\n\n${lines.map(l => `- ${l.qty} x ${l.name} (${plain(l.price)} each) = ${plain(l.price * l.qty)}`).join('\n')}\n\nSubtotal: ${plain(subtotal)}\nShipping (${d.country}): ${shipping === 0 ? 'Free' : plain(shipping)}\nTotal: ${plain(total)}\nPayment method: ${pm}\n\nCustomer: ${order.customer.first} ${order.customer.last}\nEmail: ${order.customer.email}\nPhone: ${order.customer.phone || '-'}\n\nDeliver to:\n${order.address.street} ${order.address.number}\n${order.address.postal} ${order.address.city}\n${order.address.country}\n\nNote: ${order.note || '-'}\n`;
+      const opt = shipOpt(), lines = cartLines();
+      const payload = {
+        lines: lines.map(l => ({ id: l.id, qty: l.qty })),
+        customer: { first: d.first, last: d.last, email: d.email, phone: d.phone || '' },
+        address: { street: d.street, number: d.number, postal: d.postal, city: d.city, country: d.country },
+        delivery: { method: d.delivery === 'pickup' ? 'pickup' : 'home', pickupPoint: d.delivery === 'pickup' ? d.pickupPoint : '' },
+        note: d.note || ''
+      };
       const btn = $('#cart-checkout'); btn.disabled = true; btn.classList.add('opacity-60');
       try {
-        if (ORDER_ENDPOINT) {
-          const r = await fetch(ORDER_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({ _subject: 'Rooted order ' + id, email: order.customer.email, order_id: id, message: text, order }) });
-          if (!r.ok) throw new Error('send failed');
-          order.sent = true;
-        } else {
-          location.href = `mailto:${ORDER_EMAIL}?subject=${encodeURIComponent('Rooted order ' + id)}&body=${encodeURIComponent(text)}`;
-        }
+        const r = await fetch('/api/create-payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        let data = null; try { data = await r.json(); } catch (e) {}
+        if (!r.ok || !data || !data.paymentId) throw new Error((data && data.error) || (r.status === 404 ? 'Online payment is not available on this version of the site.' : 'Something went wrong. Please try again.'));
+        pending = { paymentId: data.paymentId, orderId: data.orderId, total: data.total, qr: data.qr, checkoutUrl: data.checkoutUrl,
+          order: { id: data.orderId, lines, subtotal: data.subtotal, shipping: data.shipping, total: data.total,
+            customer: { first: d.first.trim(), last: d.last.trim(), email: d.email.trim() },
+            address: { street: d.street.trim(), number: d.number.trim(), postal: d.postal.trim(), city: d.city.trim(), country: d.country },
+            delivery: { method: payload.delivery.method, carrier: data.carrier || opt.carrier, pickupPoint: (d.pickupPoint || '').trim() } } };
+        savePending(); payMsg = ''; view = 'pay'; renderCart(); startPolling();
       } catch (e) {
-        btn.disabled = false; btn.classList.remove('opacity-60');
-        err.textContent = 'Sending failed. Check your connection and try again, or email us at ' + ORDER_EMAIL + '.'; err.classList.remove('hidden'); return;
-      }
-      btn.disabled = false; btn.classList.remove('opacity-60');
-      lastOrder = order; cart = []; saveCart(); form = { country: form.country, payment: 'transfer' }; view = 'done'; renderCart();
+        const msg = /Failed to fetch|NetworkError|Load failed/i.test(e.message) ? 'Online payment is not available right now. Please email us at ' + ORDER_EMAIL + '.' : e.message;
+        showErr(msg);
+      } finally { btn.disabled = false; btn.classList.remove('opacity-60'); }
     }
 
     $('#cart-open').onclick = openCart;
@@ -834,6 +889,12 @@
       const key = id.inc || id.dec || id.rm, line = cart.find(l => l.id === key);
       setQty(key, rm ? 0 : (line ? line.qty + (inc ? 1 : -1) : 0));
     });
+    /* A payment was started earlier (refresh, or back from the bank app): pick it up again */
+    function resumePayment() {
+      if (!pending || !pending.paymentId) return;
+      view = 'pay'; startPolling();
+      if (new URLSearchParams(location.search).has('order')) { renderCart(); $('#cart').classList.add('open'); document.body.style.overflow = 'hidden'; history.replaceState(null, '', location.pathname + location.hash); }
+    }
 
     /* ---------- Reveal ---------- */
     let io;
@@ -856,6 +917,7 @@
     observeReveals();
     syncFavs();
     renderCart();
+    resumePayment();
     loadStock();
     if (location.hash === '#admin') askAdmin();
   </script>
