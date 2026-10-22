@@ -6,7 +6,7 @@ Webshop voor Rooted. `index.html` is de hele website (inclusief foto's). De map 
 - `index.html` — de website
 - `api/create-payment.js`, `api/payment-status.js`, `api/health.js`, `api/_shared.js` — betaalfuncties
 - `stock.json` — uitverkochte producten
-- `package.json` — nodig voor Vercel
+- `package.json` en `vercel.json` — nodig voor Vercel (`vercel.json` laat de build duidelijk mislukken als de map `api` ontbreekt, in plaats van stil een 404 te geven)
 
 ## Controleren of de betaling werkt
 Open `https://JOUW-SITE.vercel.app/api/health`
