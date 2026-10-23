@@ -732,14 +732,14 @@
       /* ----- confirmation ----- */
       if (view === 'done' && lastOrder) {
         const o = lastOrder;
-        foot.classList.add('hidden'); $('#cart-title').textContent = 'Payment received';
+        foot.classList.add('hidden'); $('#cart-title').textContent = 'Thank you!';
         const where = o.delivery.method === 'pickup'
           ? `<p class="font-bold">Pickup point (${esc(o.delivery.carrier)})</p><p class="text-sm mt-1">${esc(o.delivery.pickupPoint)}</p>`
           : `<p class="font-bold">Home delivery (${esc(o.delivery.carrier)})</p><p class="text-sm mt-1">${esc(o.customer.first)} ${esc(o.customer.last)}<br>${esc(o.address.street)} ${esc(o.address.number)}<br>${esc(o.address.postal)} ${esc(o.address.city)}<br>${esc(o.address.country)}</p>`;
         body.innerHTML = `<div class="py-6">
           <div class="w-16 h-16 rounded-full bg-[var(--sage)] grid place-items-center mx-auto text-2xl">${svgIc('<path d="M20 6 9 17l-5-5"/>')}</div>
-          <p class="font-serif font-bold text-3xl text-center mt-5">Thank you, ${esc(o.customer.first)}!</p>
-          <p class="text-center mt-1 text-[var(--ink)]/70">Order <b>${esc(o.id)}</b> is paid</p>
+          <p class="font-serif font-bold text-3xl text-center mt-5">Thank you for your purchase!</p>
+          <p class="text-center mt-1 text-[var(--ink)]/70">Your payment for order <b>${esc(o.id)}</b> is confirmed.</p>
           <div class="mt-7 space-y-4">${summaryHtml(o.lines, o.subtotal, o.shipping, o.total, 'Shipping', o.discount || 0, o.code)}
             <div class="bg-white/60 rounded-2xl p-5">${where}</div></div>
           <p class="text-sm text-center mt-5 text-[var(--ink)]/70">We are preparing your order. Questions? Email <a class="underline" href="mailto:${ORDER_EMAIL}">${ORDER_EMAIL}</a>.</p>
@@ -852,7 +852,7 @@
         if (++tries > 400) return stopPolling();
         try {
           const r = await fetch('/api/payment-status?id=' + encodeURIComponent(pending.paymentId), { cache: 'no-store' });
-          if (!r.ok) return;
+          if (!r.ok) { if (r.status === 404 && view === 'pay') { payMsg = 'Cannot check your payment automatically (api/payment-status.js is missing on this site).'; renderCart(); stopPolling(); } return; }
           const { status } = await r.json();
           if (status === 'paid') return paymentDone();
           if (['failed', 'canceled', 'expired'].includes(status)) {
