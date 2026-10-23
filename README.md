@@ -19,3 +19,15 @@ Zet de sleutel NOOIT in een bestand. Zet Bancontact aan in het Mollie-dashboard 
 
 ## Verzendtarieven aanpassen
 Op twee plaatsen, met dezelfde cijfers: `SHIP` in `index.html` (toont de prijs) en `SHIPPING` in `api/_shared.js` (rekent het echte bedrag).
+
+## Kortingscodes
+
+Je maakt ze aan in Vercel: Settings > Environment Variables > naam `DISCOUNT_CODES`.
+Formaat (gescheiden door komma's): `CODE=type:waarde`
+
+- `TESTPAY=total:0.01` : de HELE bestelling (producten + verzending) kost 0,01 euro
+- `WELCOME10=percent:10` : 10% korting op de producten
+- `FIVEOFF=off:5` : 5 euro korting op de producten
+
+Voorbeeld van de waarde: `TESTPAY=total:0.01,WELCOME10=percent:10`
+Na het opslaan: Deployments > Redeploy. Hoofdletters maken niet uit. De codes staan niet in GitHub.

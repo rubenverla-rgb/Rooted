@@ -87,11 +87,10 @@
 
     .btn-add:disabled { opacity:.55; cursor:not-allowed; }
     .btn-add:disabled::before { display:none; }
-    .sold-overlay { display:none; position:absolute; inset:0; z-index:5; pointer-events:none; place-items:center; background:rgba(242,236,223,.55); }
+    .sold-overlay { display:none; position:absolute; inset:0; z-index:5; pointer-events:none; place-items:center; background:rgba(176,166,158,.80); }
     .soldout .sold-overlay { display:grid; }
-    .soldout .track img { filter: grayscale(.9); opacity:.8; }
-    .sold-tag { transform: rotate(-8deg); border:4px solid var(--ink); border-radius:22px; padding:.3em .8em; background:var(--cream); color:var(--ink);
-      font-family:'Fraunces',serif; font-weight:800; text-transform:uppercase; letter-spacing:.04em; font-size:clamp(1.9rem,5.2vw,3.1rem); line-height:1; box-shadow:0 12px 30px -10px rgba(29,43,34,.45); }
+    .soldout .track img { filter: grayscale(.4); opacity:.55; }
+    .sold-tag { color:#fff; font-family:'Bricolage Grotesque',sans-serif; font-weight:700; letter-spacing:.01em; font-size:clamp(1.7rem,4.6vw,2.6rem); line-height:1; text-shadow:0 2px 14px rgba(0,0,0,.12); }
     .admin-only { display:none; }
     body.admin .admin-only { display:block; }
 
@@ -280,9 +279,9 @@
         <p class="mt-4 text-[var(--ink)]/75 max-w-md">Feel free to send us a message, for example about another color or a gift set.</p>
       </div>
       <div class="flex flex-col gap-4 md:items-end">
-        <a href="mailto:Ruben.verla@gmail.com" class="group inline-flex items-center gap-3 text-xl md:text-2xl font-semibold">
+        <a href="mailto:ruben.verla@gmail.com" class="group inline-flex items-center gap-3 text-xl md:text-2xl font-semibold">
           <span class="w-12 h-12 rounded-full bg-[var(--ink)] text-[var(--cream)] grid place-items-center group-hover:bg-[var(--terra)] transition"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
-          <span class="link-u">Ruben.verla@gmail.com</span>
+          <span class="link-u">ruben.verla@gmail.com</span>
         </a>
         <a href="tel:+32468301801" class="group inline-flex items-center gap-3 text-xl md:text-2xl font-semibold">
           <span class="w-12 h-12 rounded-full bg-[var(--ink)] text-[var(--cream)] grid place-items-center group-hover:bg-[var(--terra)] transition"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
@@ -299,7 +298,7 @@
   <div id="modal" class="modal fixed inset-0 z-50 grid place-items-center p-4 bg-[var(--ink)]/70 backdrop-blur-sm" onclick="if(event.target===this)closeModal()">
     <div class="sheet bg-[var(--cream)] rounded-[2rem] max-w-4xl w-full max-h-[92vh] overflow-y-auto grid md:grid-cols-2 relative">
       <button onclick="closeModal()" class="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-[var(--cream)] shadow grid place-items-center hover:bg-[var(--terra)] hover:text-white transition" aria-label="Close"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      <div id="m-box" class="relative min-h-[380px] overflow-hidden md:rounded-l-[2rem] rounded-t-[2rem] md:rounded-tr-none"><div id="m-car" class="absolute inset-0"></div><div class="sold-overlay"><span class="sold-tag">Sold out</span></div></div>
+      <div id="m-box" class="relative min-h-[380px] overflow-hidden md:rounded-l-[2rem] rounded-t-[2rem] md:rounded-tr-none"><div id="m-car" class="absolute inset-0"></div><div class="sold-overlay"><span class="sold-tag">Sold Out</span></div></div>
       <div class="p-8 md:p-10 flex flex-col">
         <span id="m-tag" class="self-start text-xs font-bold uppercase tracking-widest bg-[var(--sage)] rounded-full px-3 py-1"></span>
         <h3 id="m-name" class="font-serif font-bold text-4xl mt-4 leading-tight"></h3>
@@ -476,7 +475,7 @@
           <div class="relative cursor-pointer" data-open="${p.id}">
             <div class="overflow-hidden aspect-[4/5] rounded-[2rem]" style="background:${p.bg}">
               ${carousel(p)}
-              <div class="sold-overlay"><span class="sold-tag">Sold out</span></div>
+              <div class="sold-overlay"><span class="sold-tag">Sold Out</span></div>
             </div>
             <span class="absolute top-4 left-4 bg-[var(--cream)] text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">${p.tag}</span>
             <span class="peek absolute ${(p.imgs || []).length > 1 ? 'bottom-10' : 'bottom-4'} left-1/2 -translate-x-1/2 bg-[var(--ink)] text-[var(--cream)] text-sm font-bold px-5 py-2.5 rounded-full whitespace-nowrap">View details</span>
@@ -631,7 +630,7 @@
        Payment runs through the serverless functions in /api (Mollie). The Mollie key is NOT in this file:
        it is stored as the MOLLIE_API_KEY environment variable on the host (Vercel).
        SHIP: shipping from Belgium, parcel up to 2 kg, incl. VAT. Keep it in sync with api/_shared.js (the server uses that one). */
-    const ORDER_EMAIL = 'Ruben.verla@gmail.com';
+    const ORDER_EMAIL = 'ruben.verla@gmail.com';
     const COUNTRIES = ['Belgium', 'Netherlands', 'France', 'Germany'];
     const SHIP = {
       Belgium:     { home: { carrier: 'bpost',         price: 7.10 },  pickup: { carrier: 'bpost',         price: 5.40,  url: 'https://www.bpost.be/nl/verkooppunten' } },
@@ -645,11 +644,24 @@
     const saveCart = () => { try { localStorage.setItem('rooted_cart', JSON.stringify(cart)); } catch (e) {} };
     const cartQty = () => cart.reduce((s, l) => s + l.qty, 0);
     const cartCents = () => cart.reduce((s, l) => s + Math.round(products.find(p => p.id === l.id).price * 100) * l.qty, 0);
-    let view = 'cart', form = { country: 'Belgium', delivery: 'home' }, lastOrder = null, pending = null, pollTimer = null, payMsg = '';
+    let view = 'cart', form = { country: 'Belgium', delivery: 'home' }, lastOrder = null, pending = null, pollTimer = null, payMsg = '', promo = null, promoMsg = '';
     try { pending = JSON.parse(localStorage.getItem('rooted_pending')); } catch (e) {}
     const savePending = () => { try { pending ? localStorage.setItem('rooted_pending', JSON.stringify(pending)) : localStorage.removeItem('rooted_pending'); } catch (e) {} };
     const shipOpt = () => (SHIP[form.country] || SHIP.Belgium)[form.delivery === 'pickup' ? 'pickup' : 'home'];
     const shipCents = () => Math.round(shipOpt().price * 100);
+    const grandCents = () => promo ? Math.round(promo.total * 100) : cartCents() + shipCents();
+    async function applyPromo() {
+      const code = String(form.code || '').trim();
+      if (!code) { promo = null; promoMsg = ''; return renderCart(); }
+      try {
+        const r = await fetch('/api/discount', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, lines: cart.map(l => ({ id: l.id, qty: l.qty })), country: form.country, method: form.delivery === 'pickup' ? 'pickup' : 'home' }) });
+        let d = null; try { d = await r.json(); } catch (e) {}
+        if (r.ok && d && d.valid) { promo = d; promoMsg = ''; }
+        else { promo = null; promoMsg = (d && d.error) || (r.status === 404 ? 'Discount codes are not available on this version of the site.' : 'Could not check the code.'); }
+      } catch (e) { promo = null; promoMsg = 'Could not check the code. Please try again.'; }
+      renderCart();
+    }
 
     let toastTimer;
     function toast(msg) {
@@ -662,13 +674,13 @@
       const p = products.find(x => x.id === id); if (!p || isSold(id)) return;
       const line = cart.find(l => l.id === id);
       line ? line.qty++ : cart.push({ id, qty: 1 });
-      saveCart(); renderCart();
+      promo = null; saveCart(); renderCart();
       const c = $('#cart-count'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
       toast(p.name + ' added to your cart');
     }
     function setQty(id, qty) {
       cart = qty <= 0 ? cart.filter(l => l.id !== id) : cart.map(l => l.id === id ? { ...l, qty: Math.min(qty, 99) } : l);
-      saveCart(); renderCart();
+      promo = null; saveCart(); renderCart();
     }
 
     const svgIc = d => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
@@ -681,10 +693,11 @@
     const fld = (name, label, extra = '') => `<label class="block text-sm font-semibold">${label}<input class="field mt-1" name="${name}" value="${esc(form[name] || '')}" ${extra}></label>`;
     const safeUrl = u => /^(https:\/\/|data:image\/)/.test(u || '') ? u : '';
 
-    function summaryHtml(lines, subtotal, shipping, total, shipText) {
+    function summaryHtml(lines, subtotal, shipping, total, shipText, discount = 0, code = '') {
       return `<div class="bg-white/60 rounded-2xl p-4 text-sm space-y-1">${lines.map(l => `<div class="flex justify-between gap-3"><span>${l.qty} × ${esc(l.name)}</span><span>${plain(l.price * l.qty)}</span></div>`).join('')}
         <div class="flex justify-between border-t border-[var(--ink)]/10 pt-2 mt-2"><span>Subtotal</span><span>${plain(subtotal)}</span></div>
         <div class="flex justify-between gap-3"><span>${shipText}</span><span>${plain(shipping)}</span></div>
+        ${discount > 0 ? `<div class="flex justify-between gap-3 text-[var(--terra)] font-semibold"><span>Discount (${esc(code)})</span><span>−${plain(discount)}</span></div>` : ''}
         <div class="flex justify-between font-bold text-base border-t border-[var(--ink)]/10 pt-2 mt-2"><span>Total</span><span>${plain(total)}</span></div></div>`;
     }
     const cartLines = () => cart.map(l => { const p = products.find(x => x.id === l.id); return { id: p.id, name: p.name, qty: l.qty, price: p.price }; });
@@ -694,9 +707,9 @@
       $('#cart-count').textContent = n;
       const body = $('#cart-body'), foot = $('#cart-foot');
       const grand = view === 'checkout';
-      $('#cart-total').innerHTML = euro((cartCents() + (grand ? shipCents() : 0)) / 100);
+      $('#cart-total').innerHTML = euro((grand ? grandCents() : cartCents()) / 100);
       $('#cart-total-label').textContent = grand ? 'Total' : 'Subtotal';
-      $('#cart-note').textContent = grand ? 'Incl. shipping to ' + form.country + '. You pay by scanning a QR code in the next step.' : 'Shipping is calculated at checkout.';
+      $('#cart-note').textContent = grand ? (promo ? 'Incl. shipping and discount. ' : 'Incl. shipping to ' + form.country + '. ') + 'You pay by scanning a QR code in the next step.' : 'Shipping is calculated at checkout.';
       $('#cart-aside').classList.toggle('wide', view !== 'cart');
 
       /* ----- payment (QR) ----- */
@@ -727,7 +740,7 @@
           <div class="w-16 h-16 rounded-full bg-[var(--sage)] grid place-items-center mx-auto text-2xl">${svgIc('<path d="M20 6 9 17l-5-5"/>')}</div>
           <p class="font-serif font-bold text-3xl text-center mt-5">Thank you, ${esc(o.customer.first)}!</p>
           <p class="text-center mt-1 text-[var(--ink)]/70">Order <b>${esc(o.id)}</b> is paid</p>
-          <div class="mt-7 space-y-4">${summaryHtml(o.lines, o.subtotal, o.shipping, o.total, 'Shipping')}
+          <div class="mt-7 space-y-4">${summaryHtml(o.lines, o.subtotal, o.shipping, o.total, 'Shipping', o.discount || 0, o.code)}
             <div class="bg-white/60 rounded-2xl p-5">${where}</div></div>
           <p class="text-sm text-center mt-5 text-[var(--ink)]/70">We are preparing your order. Questions? Email <a class="underline" href="mailto:${ORDER_EMAIL}">${ORDER_EMAIL}</a>.</p>
           <div class="text-center"><button onclick="closeCart()" class="btn-add mt-6 bg-[var(--ink)] text-[var(--cream)] rounded-full px-8 py-3.5 font-bold"><span>Keep browsing</span></button></div></div>`;
@@ -771,13 +784,20 @@
             </section>
             <section><h4 class="font-serif font-bold text-xl mb-2">Order note <span class="font-sans font-normal text-sm text-[var(--ink)]/50">(optional)</span></h4>
               <textarea class="field" name="note" rows="2">${esc(form.note || '')}</textarea></section>
-            ${summaryHtml(cartLines(), cartCents() / 100, shipCents() / 100, (cartCents() + shipCents()) / 100, 'Shipping to ' + esc(form.country) + ' (' + z[form.delivery === 'pickup' ? 'pickup' : 'home'].carrier + ')')}
+            <section><h4 class="font-serif font-bold text-xl mb-2">Discount code <span class="font-sans font-normal text-sm text-[var(--ink)]/50">(optional)</span></h4>
+              <div class="flex gap-2"><input class="field flex-1 uppercase" name="code" value="${esc(form.code || '')}" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                <button id="promo-apply" type="button" class="btn-add bg-[var(--ink)] text-[var(--cream)] rounded-full px-5 font-bold"><span>Apply</span></button></div>
+              ${promo ? `<p class="text-sm font-semibold mt-2 text-[var(--sage-d,#4d6b4f)]">Code ${esc(promo.code)} applied: −${plain(promo.discount)}</p>` : ''}
+              ${promoMsg ? `<p class="text-sm font-semibold mt-2 text-[var(--terra)]">${esc(promoMsg)}</p>` : ''}</section>
+            ${summaryHtml(cartLines(), cartCents() / 100, shipCents() / 100, grandCents() / 100, 'Shipping to ' + esc(form.country) + ' (' + z[form.delivery === 'pickup' ? 'pickup' : 'home'].carrier + ')', promo ? promo.discount : 0, promo ? promo.code : '')}
             <p id="err" class="text-sm font-semibold text-[var(--terra)] hidden"></p>
           </form>`;
         $('#back').onclick = () => { view = 'cart'; renderCart(); };
         const f = $('#order');
         f.addEventListener('input', e => { form[e.target.name] = e.target.value; });
-        f.addEventListener('change', e => { form[e.target.name] = e.target.value; if (e.target.name === 'delivery' || e.target.name === 'country') renderCart(); });
+        f.addEventListener('change', e => { form[e.target.name] = e.target.value; if (e.target.name === 'delivery' || e.target.name === 'country') { const had = !!promo; promo = null; renderCart(); if (had) applyPromo(); } });
+        $('#promo-apply').onclick = applyPromo;
+        f.querySelector('[name=code]').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyPromo(); } });
         return;
       }
 
@@ -846,7 +866,7 @@
     function paymentDone() {
       stopPolling();
       lastOrder = pending.order; pending = null; savePending(); payMsg = '';
-      cart = []; saveCart(); form = { country: form.country, delivery: 'home' };
+      cart = []; saveCart(); promo = null; promoMsg = ''; form = { country: form.country, delivery: 'home' };
       view = 'done'; renderCart(); $('#cart').classList.add('open'); document.body.style.overflow = 'hidden';
     }
 
@@ -861,7 +881,8 @@
         customer: { first: d.first, last: d.last, email: d.email, phone: d.phone || '' },
         address: { street: d.street, number: d.number, postal: d.postal, city: d.city, country: d.country },
         delivery: { method: d.delivery === 'pickup' ? 'pickup' : 'home', pickupPoint: d.delivery === 'pickup' ? d.pickupPoint : '' },
-        note: d.note || ''
+        note: d.note || '',
+        code: promo ? promo.code : ''
       };
       const btn = $('#cart-checkout'); btn.disabled = true; btn.classList.add('opacity-60');
       try {
@@ -870,7 +891,7 @@
         if (r.status === 404) console.error('Rooted: /api/create-payment not found. The api folder is not deployed on this site; open /api/health to check.');
         if (!r.ok || !data || !data.paymentId) throw new Error((data && data.error) || (r.status === 404 ? 'Online payment is not available on this version of the site.' : 'Something went wrong. Please try again.'));
         pending = { paymentId: data.paymentId, orderId: data.orderId, total: data.total, qr: data.qr, checkoutUrl: data.checkoutUrl,
-          order: { id: data.orderId, lines, subtotal: data.subtotal, shipping: data.shipping, total: data.total,
+          order: { id: data.orderId, lines, subtotal: data.subtotal, shipping: data.shipping, discount: data.discount || 0, code: promo ? promo.code : '', total: data.total,
             customer: { first: d.first.trim(), last: d.last.trim(), email: d.email.trim() },
             address: { street: d.street.trim(), number: d.number.trim(), postal: d.postal.trim(), city: d.city.trim(), country: d.country },
             delivery: { method: payload.delivery.method, carrier: data.carrier || opt.carrier, pickupPoint: (d.pickupPoint || '').trim() } } };
@@ -882,7 +903,7 @@
     }
 
     $('#cart-open').onclick = openCart;
-    $('#cart-checkout').onclick = () => { if (view === 'cart') { view = 'checkout'; renderCart(); } else if (view === 'checkout') placeOrder(); };
+    $('#cart-checkout').onclick = () => { if (view === 'cart') { view = 'checkout'; renderCart(); if (String(form.code || '').trim()) applyPromo(); } else if (view === 'checkout') placeOrder(); };
     document.addEventListener('click', e => {
       const add = e.target.closest('[data-add]'); if (add) return addToCart(add.dataset.add);
       const inc = e.target.closest('[data-inc]'), dec = e.target.closest('[data-dec]'), rm = e.target.closest('[data-rm]');
