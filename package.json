@@ -1,5 +1,4 @@
-{
-  "name": "rooted",
-  "private": true,
-  "engines": { "node": "20.x" }
-}
+  {
+    "name": "rooted",
+    "private": true
+  }
