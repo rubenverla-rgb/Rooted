@@ -75,6 +75,8 @@
 
     .track { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; }
     .track::-webkit-scrollbar { display:none; }
+    .track > img.fit { object-fit:contain; background:#E9E4DC; }
+    .card:hover .ph.fit { transform:none; }
     .track > img { flex:0 0 100%; width:100%; height:100%; object-fit:cover; scroll-snap-align:center; }
     .car-btn { opacity:0; transition:opacity .25s ease, background-color .2s ease, transform .2s ease; }
     .car:hover .car-btn, .car-btn:focus-visible { opacity:1; }
@@ -369,11 +371,11 @@
   <script>
     /* ---------- Producten ---------- */
     const products = [
-      { id: 'happy-pot', name: 'The happy pot', price: 4.99, was: 7.50, cat: 'pot', tag: 'Planter', bg: '#E0A184', img: 'img/happy-pot.jpg', imgs: ['img/happy-pot.jpg', 'img/happy-pot-2.jpg'],
-        items: ['1x Planter'] },
+      { id: 'happy-pot', name: 'The happy pot', price: 4.99, was: 7.50, cat: 'pot', tag: 'Planter', bg: '#E0A184', img: 'img/happy-pot.jpg', imgs: ['img/happy-pot.jpg', 'img/happy-pot-2.jpg'], fit: ['img/happy-pot-2.jpg'],
+        items: ['1x Jolly little planter'] },
       { id: 'tube-holder-green', name: 'Square holder in olive green', price: 14.99, cat: 'stek', tag: 'Propagation station', bg: '#C9D6BC', img: 'img/tube-holder-green.jpg', imgs: ['img/tube-holder-green.jpg', 'img/tube-holder-green-2.jpg'],
         items: ['1x Holder (20cm x 10cm x 4cm)', '5x Glass tubes', '5x Cork stoppers'] },
-      { id: 'tube-holder-green-3', name: 'Square holder in olive green (3 tubes)', price: 12.50, cat: 'stek', tag: 'Propagation station', bg: '#C9D6BC', img: 'img/tube-holder-green-3a.jpg', imgs: ['img/tube-holder-green-3a.jpg', 'img/tube-holder-green-3b.jpg', 'img/tube-holder-green-3c.jpg'],
+      { id: 'tube-holder-green-3', name: 'Square holder in olive green (3 tubes)', price: 12.50, cat: 'stek', tag: 'Propagation station', bg: '#C9D6BC', img: 'img/tube-holder-green-3a.jpg', imgs: ['img/tube-holder-green-3a.jpg', 'img/tube-holder-green-3b.jpg', 'img/tube-holder-green-3c.jpg'], fit: ['img/tube-holder-green-3c.jpg'],
         items: ['1x Holder (15cm x 10cm x 4cm)', '3x Glass tubes', '3x Cork stoppers'] },
       { id: 'stekstation-groen', name: 'Propagation station green', price: 14.99, cat: 'stek', tag: 'Propagation station', bg: '#AFC2A0', img: 'img/stekstation-groen.jpg', imgs: ['img/stekstation-groen.jpg', 'img/stekstation-groen-2.jpg'],
         items: ['1x Holder with ribbed pattern in olive green', '5x Glass tubes', '5x Cork stoppers'] },
@@ -398,7 +400,7 @@
     const $ = s => document.querySelector(s);
     /* Embedded images (only filled in the single-file build): swap img/ paths for data URIs */
     const IMGDATA = window.IMGDATA || {};
-    products.forEach(p => { p.img = IMGDATA[p.img] || p.img; p.imgs = (p.imgs || [p.img]).map(u => IMGDATA[u] || u); if (!p.imgs.includes(p.img)) p.imgs.unshift(p.img); });
+    products.forEach(p => { p.fit = (p.fit || []).map(u => IMGDATA[u] || u); p.img = IMGDATA[p.img] || p.img; p.imgs = (p.imgs || [p.img]).map(u => IMGDATA[u] || u); if (!p.imgs.includes(p.img)) p.imgs.unshift(p.img); });
 
     const priceHtml = p => p.was ? `<span class="inline-flex flex-col items-end leading-none"><s class="was">${plain(p.was)}</s><span class="whitespace-nowrap">${euro(p.price)}</span></span>` : euro(p.price);
     const euro = n => { const [w, c] = n.toFixed(2).split('.'); return `€${w}<span class="cents">.${c}</span>`; };
@@ -455,7 +457,7 @@
       const imgs = p.imgs || [p.img];
       const multi = imgs.length > 1;
       return `<div class="car ${tall ? 'absolute inset-0' : 'w-full h-full'}" data-car>
-        <div class="track h-full" data-track>${imgs.map((src, k) => `<img src="${src}" alt="${esc(p.name)} (${k + 1}/${imgs.length})" ${k ? 'loading="lazy"' : ''} class="ph" draggable="false">`).join('')}</div>
+        <div class="track h-full" data-track>${imgs.map((src, k) => `<img src="${src}" alt="${esc(p.name)} (${k + 1}/${imgs.length})" ${k ? 'loading="lazy"' : ''} class="ph${(p.fit || []).includes(src) ? ' fit' : ''}" draggable="false">`).join('')}</div>
         ${multi ? `
         <button type="button" data-car-prev class="car-btn absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[var(--cream)] text-[var(--ink)] shadow grid place-items-center" aria-label="Previous photo">${chev('m15 18-6-6 6-6')}</button>
         <button type="button" data-car-next class="car-btn absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[var(--cream)] text-[var(--ink)] shadow grid place-items-center" aria-label="Next photo">${chev('m9 18 6-6-6-6')}</button>
