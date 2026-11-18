@@ -9,8 +9,9 @@ const PRODUCTS = {
   'muurvaasjes-mix': 9.99,
   'type-2-muurvaasjes-groen': 9.99,
   'type-2-muurvaasjes-bruin': 9.99,
-  'happy-pot': 7.50,
+  'happy-pot': 4.99,
   'tube-holder-green': 14.99,
+  'tube-holder-green-3': 12.50,
   'stekstation-hout': 17.99,
   'stekstation-frame-hout': 19.99,
 };
@@ -25,6 +26,7 @@ const NAMES = {
   'type-2-muurvaasjes-bruin': 'Type 2 wall vases brown',
   'happy-pot': 'The happy pot',
   'tube-holder-green': 'Square holder in olive green',
+  'tube-holder-green-3': 'Square holder in olive green (3 tubes)',
   'stekstation-hout': 'Wooden propagation station',
   'stekstation-frame-hout': 'Wooden frame propagation station',
 };

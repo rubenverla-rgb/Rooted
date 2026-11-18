@@ -25,9 +25,9 @@ Op twee plaatsen, met dezelfde cijfers: `SHIP` in `index.html` (toont de prijs) 
 Je maakt ze aan in Vercel: Settings > Environment Variables > naam `DISCOUNT_CODES`.
 Formaat (gescheiden door komma's): `CODE=type:waarde`
 
-- `TESTPAY=total:0.01` : de HELE bestelling (producten + verzending) kost 0,01 euro
+- `TESTPAY=total:0.02` : de HELE bestelling (producten + verzending) kost 0,02 euro
 - `WELCOME10=percent:10` : 10% korting op de producten
 - `FIVEOFF=off:5` : 5 euro korting op de producten
 
-Voorbeeld van de waarde: `TESTPAY=total:0.01,WELCOME10=percent:10`
+Voorbeeld van de waarde: `TESTPAY=total:0.02,WELCOME10=percent:10`
 Na het opslaan: Deployments > Redeploy. Hoofdletters maken niet uit. De codes staan niet in GitHub.
