@@ -400,7 +400,7 @@
     const IMGDATA = window.IMGDATA || {};
     products.forEach(p => { p.img = IMGDATA[p.img] || p.img; p.imgs = (p.imgs || [p.img]).map(u => IMGDATA[u] || u); if (!p.imgs.includes(p.img)) p.imgs.unshift(p.img); });
 
-    const priceHtml = p => p.was ? `<span class="inline-flex flex-col items-end leading-none"><s class="was">${plain(p.was)}</s>${euro(p.price)}</span>` : euro(p.price);
+    const priceHtml = p => p.was ? `<span class="inline-flex flex-col items-end leading-none"><s class="was">${plain(p.was)}</s><span class="whitespace-nowrap">${euro(p.price)}</span></span>` : euro(p.price);
     const euro = n => { const [w, c] = n.toFixed(2).split('.'); return `€${w}<span class="cents">.${c}</span>`; };
     const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const desc = p => p.items.join(', ') + '.';
